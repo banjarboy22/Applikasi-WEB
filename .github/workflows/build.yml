@@ -21,11 +21,11 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Siapkan dan Build APK
+    - name: Buat Gradle Wrapper dan Build APK
       run: |
-        # Perintah ini akan mencari folder hasil ekstrak secara otomatis
-        WORK_DIR=$(dirname $(find . -name gradlew | head -n 1))
+        WORK_DIR=$(dirname $(find . -name "build.gradle" | head -n 1))
         cd "$WORK_DIR"
+        gradle wrapper
         chmod +x ./gradlew
         ./gradlew assembleDebug
 
@@ -33,5 +33,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: APK-Siap-Instal
-        path: "**/*.apk"
-
+        path: "**/build/outputs/apk/debug/**/*.apk"
