@@ -18,7 +18,7 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Ekstrak, Tambah Import Paksa, dan Build APK
+    - name: Ekstrak dan Build APK
       run: |
         # 1. Ekstrak file ZIP
         unzip -q IDNKaltimAppV4pro.zip
@@ -27,18 +27,11 @@ jobs:
         PROJECT_DIR=$(dirname $(find . -name "settings.gradle" | head -n 1))
         cd "$PROJECT_DIR"
         
-        # 3. Cari dan tambahkan import LayoutParams secara paksa di baris kedua file MainActivity.kt
-        MAIN_FILE=$(find . -name "MainActivity.kt" | head -n 1)
-        if [ -n "$MAIN_FILE" ]; then
-          # Memasukkan import tepat di bawah baris 'package ...'
-          sed -i '0,/package .*/{s//&\nimport android.view.ViewGroup.LayoutParams/}' "$MAIN_FILE"
-        fi
-        
-        # 4. Atur properti JVM target agar kompatibel
+        # 3. Atur properti JVM target agar kompatibel
         echo "kotlin.jvm.target.validation.mode=warning" >> gradle.properties
         echo "android.defaults.buildfeatures.buildconfig=true" >> gradle.properties
         
-        # 5. Unduh Gradle 8.0 dan Build APK
+        # 4. Unduh Gradle 8.0 dan Build APK
         curl -L https://services.gradle.org/distributions/gradle-8.0-bin.zip -o gradle-8.0.zip
         unzip -q gradle-8.0.zip
         export PATH=$PWD/gradle-8.0/bin:$PATH
