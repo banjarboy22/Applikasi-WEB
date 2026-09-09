@@ -21,8 +21,17 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Build APK dengan Penyesuaian JVM
+    - name: Tambahkan Import yang Kurang & Build APK
       run: |
+        # Cari file MainActivity.kt dan tambahkan import LayoutParams secara otomatis jika belum ada
+        MAIN_FILE=$(find . -name "MainActivity.kt" | head -n 1)
+        if [ -n "$MAIN_FILE" ]; then
+          # Memastikan import android.view.ViewGroup.LayoutParams ada di dalam file
+          if ! grep -q "import android.view.ViewGroup.LayoutParams" "$MAIN_FILE"; then
+            sed -i '/package /a import android.view.ViewGroup.LayoutParams' "$MAIN_FILE"
+          fi
+        fi
+
         # Unduh dan pasang Gradle 8.0
         curl -L https://services.gradle.org/distributions/gradle-8.0-bin.zip -o gradle-8.0.zip
         unzip -q gradle-8.0.zip
@@ -32,11 +41,7 @@ jobs:
         PROJECT_DIR=$(dirname $(find . -name "settings.gradle" | head -n 1))
         cd "$PROJECT_DIR"
         
-        # Tambahkan konfigurasi penangkal error JVM target di gradle.properties secara otomatis
-        echo "kotlin.jvm.target.validation.mode=warning" >> gradle.properties
-        echo "android.defaults.buildfeatures.buildconfig=true" >> gradle.properties
-        
-        # Jalankan wrapper dan build dengan mengabaikan peringatan target kompatibilitas
+        # Jalankan build
         gradle wrapper --gradle-version 8.0
         chmod +x ./gradlew
         ./gradlew assembleDebug -Dkotlin.jvm.target.validation.mode=warning
