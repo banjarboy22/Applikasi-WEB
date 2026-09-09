@@ -19,33 +19,25 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Ekstrak, Bersihkan Impor, dan Build APK
+    - name: Ekstrak dan Build APK
       run: |
-        # 1. Ekstrak file ZIP proyek jika ada
+        # 1. Ekstrak file ZIP proyek
         if [ -f "IDNKaltimAppV4pro.zip" ]; then
           unzip -q IDNKaltimAppV4pro.zip
         fi
         
-        # 2. Temukan lokasi folder proyek
+        # 2. Temukan lokasi folder proyek secara otomatis
         SETTINGS_FILE=$(find . -name "settings.gradle" | head -n 1)
         if [ -n "$SETTINGS_FILE" ]; then
           PROJECT_DIR=$(dirname "$SETTINGS_FILE")
           cd "$PROJECT_DIR"
         fi
         
-        # 3. Tambahkan impor yang benar di MainActivity.kt agar LayoutParams terbaca
-        MAIN_FILE=$(find . -name "MainActivity.kt" | head -n 1)
-        if [ -n "$MAIN_FILE" ]; then
-          echo "Memperbaiki impor Layout di: $MAIN_FILE"
-          sed -i '/import android.view.ViewGroup.LayoutParams/d' "$MAIN_FILE"
-          sed -i '0,/package .*/{s//&\nimport android.view.ViewGroup.LayoutParams\nimport android.widget.LinearLayout/}' "$MAIN_FILE"
-        fi
-        
-        # 4. Atur properti Gradle
+        # 3. Atur properti Gradle
         echo "kotlin.jvm.target.validation.mode=warning" >> gradle.properties
         echo "android.defaults.buildfeatures.buildconfig=true" >> gradle.properties
         
-        # 5. Build APK
+        # 4. Build APK
         if [ -f "./gradlew" ]; then
           chmod +x ./gradlew
           ./gradlew assembleDebug -Dkotlin.jvm.target.validation.mode=warning
