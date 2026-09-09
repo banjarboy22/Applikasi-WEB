@@ -21,11 +21,12 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Buat Gradle Wrapper dan Build APK
+    - name: Buat Gradle Wrapper Stabil dan Build APK
       run: |
         WORK_DIR=$(dirname $(find . -name "build.gradle" | head -n 1))
         cd "$WORK_DIR"
-        gradle wrapper
+        # Memaksa menggunakan Gradle versi 8.0 yang stabil
+        gradle wrapper --gradle-version 8.0
         chmod +x ./gradlew
         ./gradlew assembleDebug
 
