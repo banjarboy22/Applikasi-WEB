@@ -18,7 +18,7 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Ekstrak, Koreksi Impor, dan Build APK
+    - name: Ekstrak, Bersihkan Impor, dan Build APK
       run: |
         # 1. Ekstrak file ZIP
         unzip -q IDNKaltimAppV4pro.zip
@@ -27,10 +27,14 @@ jobs:
         PROJECT_DIR=$(dirname $(find . -name "settings.gradle" | head -n 1))
         cd "$PROJECT_DIR"
         
-        # 3. Koreksi otomatis impor Layout yang kurang huruf 's' di MainActivity.kt
+        # 3. Bersihkan semua variasi impor Layout yang salah di MainActivity.kt
         MAIN_FILE=$(find . -name "MainActivity.kt" | head -n 1)
         if [ -n "$MAIN_FILE" ]; then
-          sed -i 's/import android.view.ViewGroup.Layout/import android.view.ViewGroup.LayoutParams/g' "$MAIN_FILE"
+          sed -i '/import android.view.ViewGroup.Layout/d' "$MAIN_FILE"
+          sed -i '/import android.view.ViewGroup.LayoutParams/d' "$MAIN_FILE"
+          
+          # Sisipkan impor yang benar tepat di bawah baris 'package ...'
+          sed -i '0,/package .*/{s//&\nimport android.view.ViewGroup.LayoutParams/}' "$MAIN_FILE"
         fi
         
         # 4. Atur properti JVM target
