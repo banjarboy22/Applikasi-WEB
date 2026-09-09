@@ -3,6 +3,7 @@ name: Build APK
 on:
   push:
     branches: [ "main", "master" ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -20,16 +21,26 @@ jobs:
 
     - name: Ekstrak, Bersihkan Impor, dan Build APK
       run: |
-        # 1. Ekstrak file ZIP
-        unzip -q IDNKaltimAppV4pro.zip
+        # 1. Ekstrak file ZIP proyek
+        if [ -f "IDNKaltimAppV4pro.zip" ]; then
+          unzip -q IDNKaltimAppV4pro.zip
+        else
+          echo "File ZIP tidak ditemukan, mencari struktur folder langsung..."
+        fi
         
-        # 2. Cari direktori root proyek
-        PROJECT_DIR=$(dirname $(find . -name "settings.gradle" | head -n 1))
-        cd "$PROJECT_DIR"
+        # 2. Temukan lokasi folder proyek yang memiliki file build.gradle atau settings.gradle
+        SETTINGS_FILE=$(find . -name "settings.gradle" | head -n 1)
+        if [ -n "$SETTINGS_FILE" ]; then
+          PROJECT_DIR=$(dirname "$SETTINGS_FILE")
+          cd "$PROJECT_DIR"
+        fi
         
+        echo "Direktori kerja aktif: $(pwd)"
+
         # 3. Bersihkan semua variasi impor Layout yang salah di MainActivity.kt
         MAIN_FILE=$(find . -name "MainActivity.kt" | head -n 1)
         if [ -n "$MAIN_FILE" ]; then
+          echo "Memperbaiki impor di: $MAIN_FILE"
           sed -i '/import android.view.ViewGroup.Layout/d' "$MAIN_FILE"
           sed -i '/import android.view.ViewGroup.LayoutParams/d' "$MAIN_FILE"
           
@@ -37,21 +48,27 @@ jobs:
           sed -i '0,/package .*/{s//&\nimport android.view.ViewGroup.LayoutParams/}' "$MAIN_FILE"
         fi
         
-        # 4. Atur properti JVM target
+        # 4. Atur properti JVM target dan build config
         echo "kotlin.jvm.target.validation.mode=warning" >> gradle.properties
         echo "android.defaults.buildfeatures.buildconfig=true" >> gradle.properties
         
-        # 5. Unduh Gradle 8.0 dan Build APK
-        curl -L https://services.gradle.org/distributions/gradle-8.0-bin.zip -o gradle-8.0.zip
-        unzip -q gradle-8.0.zip
-        export PATH=$PWD/gradle-8.0/bin:$PATH
-        
-        gradle wrapper --gradle-version 8.0
-        chmod +x ./gradlew
-        ./gradlew assembleDebug -Dkotlin.jvm.target.validation.mode=warning
+        # 5. Build APK menggunakan Gradle Wrapper bawaan atau unduh jika belum ada
+        if [ -f "./gradlew" ]; then
+          chmod +x ./gradlew
+          ./gradlew assembleDebug -Dkotlin.jvm.target.validation.mode=warning
+        else
+          echo "Gradlew tidak ditemukan, mengunduh Gradle 8.0..."
+          curl -L https://services.gradle.org/distributions/gradle-8.0-bin.zip -o gradle-8.0.zip
+          unzip -q gradle-8.0.zip
+          export PATH=$PWD/gradle-8.0/bin:$PATH
+          gradle wrapper --gradle-version 8.0
+          chmod +x ./gradlew
+          ./gradlew assembleDebug -Dkotlin.jvm.target.validation.mode=warning
+        fi
 
     - name: Upload APK Hasil Build
       uses: actions/upload-artifact@v4
       with:
         name: APK-Siap-Instal
-        path: "**/build/outputs/apk/debug/**/*.apk"
+        path: "**/build/outputs/apk/debug/app-debug.apk"
+        if-no-files-found: warn
