@@ -19,25 +19,35 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Ekstrak dan Build APK
+    - name: Ekstrak, Perbaiki Kode, dan Build APK
       run: |
-        # 1. Ekstrak file ZIP proyek
+        # 1. Ekstrak file ZIP proyek jika ada
         if [ -f "IDNKaltimAppV4pro.zip" ]; then
           unzip -q IDNKaltimAppV4pro.zip
         fi
         
-        # 2. Temukan lokasi folder proyek secara otomatis
+        # 2. Temukan lokasi folder proyek
         SETTINGS_FILE=$(find . -name "settings.gradle" | head -n 1)
         if [ -n "$SETTINGS_FILE" ]; then
           PROJECT_DIR=$(dirname "$SETTINGS_FILE")
           cd "$PROJECT_DIR"
         fi
         
-        # 3. Atur properti Gradle
+        # 3. Paksa tambahkan import LayoutParams yang benar langsung di server GitHub
+        MAIN_FILE=$(find . -name "MainActivity.kt" | head -n 1)
+        if [ -n "$MAIN_FILE" ]; then
+          echo "Menyuntikkan import LayoutParams ke: $MAIN_FILE"
+          # Hapus baris import layout yang keliru jika ada
+          sed -i '/import android.view.ViewGroup.Layout/d' "$MAIN_FILE"
+          # Tambahkan import yang valid tepat di bawah baris package
+          sed -i '0,/package .*/{s//&\nimport android.view.ViewGroup.LayoutParams/}' "$MAIN_FILE"
+        fi
+        
+        # 4. Atur properti Gradle
         echo "kotlin.jvm.target.validation.mode=warning" >> gradle.properties
         echo "android.defaults.buildfeatures.buildconfig=true" >> gradle.properties
         
-        # 4. Build APK
+        # 5. Build APK
         if [ -f "./gradlew" ]; then
           chmod +x ./gradlew
           ./gradlew assembleDebug -Dkotlin.jvm.target.validation.mode=warning
