@@ -23,15 +23,19 @@ jobs:
 
     - name: Build APK Langsung
       run: |
-        WORK_DIR=$(dirname $(find . -name "build.gradle" | head -n 1))
-        cd "$WORK_DIR"
+        # Mencari letak folder utama yang memiliki file build.gradle di root (bukan di dalam app)
+        # Atau masuk ke folder hasil ekstrak ZIP secara otomatis
         
-        # Mengunduh dan memasang Gradle 8.0 secara manual agar tidak pakai versi 9 yang error
+        # Unduh dan pasang Gradle 8.0
         curl -L https://services.gradle.org/distributions/gradle-8.0-bin.zip -o gradle-8.0.zip
         unzip -q gradle-8.0.zip
         export PATH=$PWD/gradle-8.0/bin:$PATH
         
-        # Inisialisasi wrapper dan build
+        # Cari direktori root proyek yang berisi file build.gradle utama
+        PROJECT_DIR=$(dirname $(find . -name "settings.gradle" | head -n 1))
+        cd "$PROJECT_DIR"
+        
+        # Jalankan wrapper dan build
         gradle wrapper --gradle-version 8.0
         chmod +x ./gradlew
         ./gradlew assembleDebug
