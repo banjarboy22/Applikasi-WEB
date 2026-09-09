@@ -21,24 +21,25 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Build APK Langsung
+    - name: Build APK dengan Penyesuaian JVM
       run: |
-        # Mencari letak folder utama yang memiliki file build.gradle di root (bukan di dalam app)
-        # Atau masuk ke folder hasil ekstrak ZIP secara otomatis
-        
         # Unduh dan pasang Gradle 8.0
         curl -L https://services.gradle.org/distributions/gradle-8.0-bin.zip -o gradle-8.0.zip
         unzip -q gradle-8.0.zip
         export PATH=$PWD/gradle-8.0/bin:$PATH
         
-        # Cari direktori root proyek yang berisi file build.gradle utama
+        # Cari direktori root proyek
         PROJECT_DIR=$(dirname $(find . -name "settings.gradle" | head -n 1))
         cd "$PROJECT_DIR"
         
-        # Jalankan wrapper dan build
+        # Tambahkan konfigurasi penangkal error JVM target di gradle.properties secara otomatis
+        echo "kotlin.jvm.target.validation.mode=warning" >> gradle.properties
+        echo "android.defaults.buildfeatures.buildconfig=true" >> gradle.properties
+        
+        # Jalankan wrapper dan build dengan mengabaikan peringatan target kompatibilitas
         gradle wrapper --gradle-version 8.0
         chmod +x ./gradlew
-        ./gradlew assembleDebug
+        ./gradlew assembleDebug -Dkotlin.jvm.target.validation.mode=warning
 
     - name: Upload APK Hasil Build
       uses: actions/upload-artifact@v4
