@@ -21,20 +21,20 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Atur Versi Gradle dan Build APK
+    - name: Build APK Langsung
       run: |
         WORK_DIR=$(dirname $(find . -name "build.gradle" | head -n 1))
         cd "$WORK_DIR"
         
-        # Membuat folder gradle/wrapper secara manual agar versi terkunci di 8.0
-        mkdir -p gradle/wrapper
-        echo "distributionBase=GRADLE_USER_HOME" > gradle/wrapper/gradle-wrapper.properties
-        echo "distributionPath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
-        echo "distributionUrl=https\://services.gradle.org/distributions/gradle-8.0-bin.zip" >> gradle/wrapper/gradle-wrapper.properties
+        # Mengunduh dan memasang Gradle 8.0 secara manual agar tidak pakai versi 9 yang error
+        curl -L https://services.gradle.org/distributions/gradle-8.0-bin.zip -o gradle-8.0.zip
+        unzip -q gradle-8.0.zip
+        export PATH=$PWD/gradle-8.0/bin:$PATH
         
-        gradle wrapper
+        # Inisialisasi wrapper dan build
+        gradle wrapper --gradle-version 8.0
         chmod +x ./gradlew
-        ./gradlew assembleDebug --warning-mode all
+        ./gradlew assembleDebug
 
     - name: Upload APK Hasil Build
       uses: actions/upload-artifact@v4
