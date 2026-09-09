@@ -1,1 +1,37 @@
-.github/workflows/build.yml
+name: Build APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Ekstrak File ZIP
+      run: unzip IDNKaltimAppV4-source.zip
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Siapkan dan Build APK
+      run: |
+        # Perintah ini akan mencari folder hasil ekstrak secara otomatis
+        WORK_DIR=$(dirname $(find . -name gradlew | head -n 1))
+        cd "$WORK_DIR"
+        chmod +x ./gradlew
+        ./gradlew assembleDebug
+
+    - name: Upload APK Hasil Build
+      uses: actions/upload-artifact@v4
+      with:
+        name: APK-Siap-Instal
+        path: "**/*.apk"
+
