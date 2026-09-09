@@ -12,36 +12,38 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Ekstrak File ZIP
-      run: unzip IDNKaltimAppV4pro.zip
-
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Tambahkan Import yang Kurang & Build APK
+    - name: Ekstrak, Tambah Import, dan Build APK
       run: |
-        # Cari file MainActivity.kt dan tambahkan import LayoutParams secara otomatis jika belum ada
+        # 1. Ekstrak file ZIP terlebih dahulu
+        unzip -q IDNKaltimAppV4pro.zip
+        
+        # 2. Cari direktori root proyek setelah diekstrak
+        PROJECT_DIR=$(dirname $(find . -name "settings.gradle" | head -n 1))
+        cd "$PROJECT_DIR"
+        
+        # 3. Tambahkan import LayoutParams ke MainActivity.kt jika belum ada
         MAIN_FILE=$(find . -name "MainActivity.kt" | head -n 1)
         if [ -n "$MAIN_FILE" ]; then
-          # Memastikan import android.view.ViewGroup.LayoutParams ada di dalam file
           if ! grep -q "import android.view.ViewGroup.LayoutParams" "$MAIN_FILE"; then
             sed -i '/package /a import android.view.ViewGroup.LayoutParams' "$MAIN_FILE"
           fi
         fi
-
-        # Unduh dan pasang Gradle 8.0
+        
+        # 4. Paksa samakan versi JVM target di gradle.properties agar tidak error
+        echo "kotlin.jvm.target.validation.mode=warning" >> gradle.properties
+        echo "android.defaults.buildfeatures.buildconfig=true" >> gradle.properties
+        
+        # 5. Unduh Gradle 8.0 dan Build APK
         curl -L https://services.gradle.org/distributions/gradle-8.0-bin.zip -o gradle-8.0.zip
         unzip -q gradle-8.0.zip
         export PATH=$PWD/gradle-8.0/bin:$PATH
         
-        # Cari direktori root proyek
-        PROJECT_DIR=$(dirname $(find . -name "settings.gradle" | head -n 1))
-        cd "$PROJECT_DIR"
-        
-        # Jalankan build
         gradle wrapper --gradle-version 8.0
         chmod +x ./gradlew
         ./gradlew assembleDebug -Dkotlin.jvm.target.validation.mode=warning
