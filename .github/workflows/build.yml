@@ -18,24 +18,23 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Ekstrak, Tambah Import, dan Build APK
+    - name: Ekstrak, Tambah Import Paksa, dan Build APK
       run: |
-        # 1. Ekstrak file ZIP terlebih dahulu
+        # 1. Ekstrak file ZIP
         unzip -q IDNKaltimAppV4pro.zip
         
-        # 2. Cari direktori root proyek setelah diekstrak
+        # 2. Cari direktori root proyek
         PROJECT_DIR=$(dirname $(find . -name "settings.gradle" | head -n 1))
         cd "$PROJECT_DIR"
         
-        # 3. Tambahkan import LayoutParams ke MainActivity.kt jika belum ada
+        # 3. Cari dan tambahkan import LayoutParams secara paksa di baris kedua file MainActivity.kt
         MAIN_FILE=$(find . -name "MainActivity.kt" | head -n 1)
         if [ -n "$MAIN_FILE" ]; then
-          if ! grep -q "import android.view.ViewGroup.LayoutParams" "$MAIN_FILE"; then
-            sed -i '/package /a import android.view.ViewGroup.LayoutParams' "$MAIN_FILE"
-          fi
+          # Memasukkan import tepat di bawah baris 'package ...'
+          sed -i '0,/package .*/{s//&\nimport android.view.ViewGroup.LayoutParams/}' "$MAIN_FILE"
         fi
         
-        # 4. Paksa samakan versi JVM target di gradle.properties agar tidak error
+        # 4. Atur properti JVM target agar kompatibel
         echo "kotlin.jvm.target.validation.mode=warning" >> gradle.properties
         echo "android.defaults.buildfeatures.buildconfig=true" >> gradle.properties
         
